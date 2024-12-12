@@ -1,4 +1,4 @@
-numpy==1.25.0 #1.21.5 buono per Binder
+numpy>=1.24.0 #1.21.5 buono per Binder
 pandas==2.0.3
 plotly==5.9.0
 ipywidgets==8.0.4
