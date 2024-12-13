@@ -4,4 +4,4 @@ plotly==5.9.0
 IPython==8.15.0
 yfinance
 finvizfinance
-streamlit==1.25.0
+streamlit==1.40.2
