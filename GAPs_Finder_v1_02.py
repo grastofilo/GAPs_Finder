@@ -24,7 +24,7 @@ from finvizfinance.quote import finvizfinance
 
 import streamlit as st
 
-from st_aggrid import AgGrid
+#from st_aggrid import AgGrid
 
 
 
