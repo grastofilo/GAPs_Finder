@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pprint import pprint
 
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
+#from plotly.subplots import make_subplots
+#import plotly.graph_objects as go
 
-import ipywidgets as widgets
+#import ipywidgets as widgets
 from IPython.display import display, clear_output
 
 import yfinance as yf
