@@ -8,12 +8,12 @@ Created on Thu Dec  5 11:34:33 2024
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+#import matplotlib.pyplot as plt
+#import matplotlib.dates as mdates
 from pprint import pprint
 
-#from plotly.subplots import make_subplots
-#import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 #import ipywidgets as widgets
 from IPython.display import display, clear_output
