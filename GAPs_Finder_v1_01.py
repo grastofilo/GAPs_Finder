@@ -812,10 +812,33 @@ with col2:
 
         
         
-with col3:
-    st.markdown('[Data Disclaimer](https://gapsfinder.streamlit.app/pages/disclaimer.py)')
-        
-    
+
+
+
+
+st.markdown("""
+    <style>
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            background-color: #e0e0e0; /* Grigio chiaro neutro */
+            padding: 6px;
+        }
+        .footer a {
+            font-size: 12px; /* Scritta più piccola */
+            text-decoration: none;
+            color: blue; /* Puoi cambiare il colore del link se lo desideri */
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <div class="footer">
+        <a href="https://grastofilo.github.io/GAPs_Finder_dipendent_files/disclaimer.html" target="_blank">Data Disclaimer</a>
+    </div>
+""", unsafe_allow_html=True)
 
 
 #%%
