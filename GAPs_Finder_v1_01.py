@@ -608,12 +608,14 @@ with col1:
     
     if bottone_ricerca:
         
+        
         #stampa_col1.empty()
         st.session_state.clear()
         
         st.session_state['slider_gaps']=(30,1000)
         st.session_state['slider_volume']=1
         st.session_state['slider_price']=(2,200)
+        
             
         
         
@@ -810,7 +812,10 @@ with col2:
 
         
         
+with col3:
+    st.markdown('[Data Disclaimer](https://gapsfinder.streamlit.app/pages/disclaimer.py)')
         
+    
 
 
 #%%
