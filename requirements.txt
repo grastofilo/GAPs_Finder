@@ -5,3 +5,4 @@ IPython==8.15.0
 yfinance
 finvizfinance
 streamlit==1.40.2
+requests
