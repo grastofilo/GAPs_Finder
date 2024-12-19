@@ -24,6 +24,10 @@ from finvizfinance.quote import finvizfinance
 
 import streamlit as st
 
+import pickle
+
+import requests
+
 #from st_aggrid import AgGrid
 
 
@@ -50,8 +54,27 @@ def elaborazione(dati_storici):
     
     #global dati_storici_ADJ 
     
+    dati_storici['Gap %'] = ((dati_storici['Open']*100)/dati_storici['Close'].shift(1))-100
+
+    colonna_da_spostare = dati_storici.pop('Gap %')
+    dati_storici.insert(1,'Gap %',colonna_da_spostare)
+    
+    dati_storici['Max % UP'] = ((dati_storici['High']*100)/(dati_storici['Open']))-100
+    dati_storici['Max % DOWN'] = ((dati_storici['Low']*100)/(dati_storici['Open']))-100
+    dati_storici['Open to Close %'] = ((dati_storici['Close']*100)/(dati_storici['Open']))-100
+    dati_storici['Chiusura'] = dati_storici.apply(lambda x: 'RED' if x['Open to Close %']<0 \
+                                                  else 'GREEN' if x['Open to Close %']>0 else '=open', axis=1)
+        
+    
+    
+    # creo una copia di dati_storici per mantenere inalterati i prezzi corretti che serviranno x il grafico
+    dati_storici_ADJ = dati_storici.round(3).copy()
+    
    
     
+   
+    
+   
     
     # creo un df transitorio dove inserire i risultati del calolo dello split factor:
 
@@ -81,29 +104,43 @@ def elaborazione(dati_storici):
 
                                 
                             
+                            
+                            
     
-    
-    
-    
-    dati_storici['Gap %'] = ((dati_storici['Open']*100)/dati_storici['Close'].shift(1))-100
+    dati_storici['Open'] = dati_storici.apply(lambda x: x['Open']*trans.loc[x.name,'split_factor'] if\
+                              (trans.loc[x.name,'split_factor']< 1) else \
+                                  (x['Open']/trans.loc[x.name,'split_factor']),axis=1)
+        
+    dati_storici['High'] = dati_storici.apply(lambda x: x['High']*trans.loc[x.name,'split_factor'] if\
+                              (trans.loc[x.name,'split_factor']< 1) else \
+                                  (x['High']/trans.loc[x.name,'split_factor']),axis=1)
+        
+    dati_storici['Low'] = dati_storici.apply(lambda x: x['Low']*trans.loc[x.name,'split_factor'] if\
+                              (trans.loc[x.name,'split_factor']< 1) else \
+                                  (x['Low']/trans.loc[x.name,'split_factor']),axis=1)
+        
+    dati_storici['Close'] = dati_storici.apply(lambda x: x['Close']*trans.loc[x.name,'split_factor'] if\
+                              (trans.loc[x.name,'split_factor']< 1) else \
+                                  (x['Close']/trans.loc[x.name,'split_factor']),axis=1) 
+        
+        
+    dati_storici['Volume'] = dati_storici.apply(lambda x: x['Volume']/trans.loc[x.name,'split_factor'] if\
+                              (trans.loc[x.name,'split_factor']< 1) else \
+                                  (x['Volume']*trans.loc[x.name,'split_factor']),axis=1)    
+        
+        
+        
 
-    colonna_da_spostare = dati_storici.pop('Gap %')
-    dati_storici.insert(1,'Gap %',colonna_da_spostare)
     
-    dati_storici['Max % UP'] = ((dati_storici['High']*100)/(dati_storici['Open']))-100
-    dati_storici['Max % DOWN'] = ((dati_storici['Low']*100)/(dati_storici['Open']))-100
-    dati_storici['Open to Close %'] = ((dati_storici['Close']*100)/(dati_storici['Open']))-100
-    dati_storici['Chiusura'] = dati_storici.apply(lambda x: 'RED' if x['Open to Close %']<0 \
-                                                  else 'GREEN' if x['Open to Close %']>0 else '=open', axis=1)
     
     dati_storici = dati_storici.round(3)
     
     
-    # creo una copia di dati_storici per mantenere inalterati i prezzi corretti che serviranno x il grafico
-    dati_storici_ADJ = dati_storici.copy()
     
     
-    return trans,dati_storici_ADJ
+    
+    
+    return dati_storici_ADJ,dati_storici
 
 
 
@@ -221,10 +258,43 @@ def finvitz_func(nome_ticker):
 
 def yfinance_func(nome_ticker):
     
+    dati_storici = None
     
+    proxies = {'http': 'http://220.248.70.237:9002'}
+
+    # Creazione di una sessione custom con il proxy
+    session = requests.Session()
+    session.proxies = proxies
+
+    # Usa la sessione per fare la richiesta a yfinance
+    yf._REQUESTS_SESSION = session  # Assegna la sessione personalizzata
+
+    # Ora puoi fare le chiamate a yfinance
+    # data = yf.download("AAPL", period="1d", interval="1m")
+  
+  
     ticker = yf.Ticker(nome_ticker.upper())
-    dati_storici = ticker.history(period="max")  # dati periodo massimo disponibile
+    dati_storici =  ticker.history(period="max")  # dati periodo massimo disponibile  
+    print(len(dati_storici))
     
+    # with open(f"/Users/ninni/desktop/{nome_ticker}.pkl", "wb") as file:
+    #      pickle.dump(dati_storici, file)
+    
+    
+    
+    # length = 0; length_list=[]
+    # for attempts in range(1,6):
+    #     dati_provvisori = ticker.history(period="max")  # dati periodo massimo disponibile
+        
+    #     if len(dati_provvisori)> length:
+    #         length = len(dati_provvisori)
+    #         dati_storici = dati_provvisori
+            
+    #     length_list.append(length)
+        
+    #     print(length_list)
+    # print(dati_storici['Stock Splits'].sum())
+   
     
     
     #if  not dati_storici.empty:
@@ -272,7 +342,7 @@ def yfinance_func(nome_ticker):
 
 
 
-def ricerca_gaps(nome_ticker,dati_storici,trans,gap_perc_A,gap_perc_B,volume,prezzo_A,prezzo_B):
+def ricerca_gaps(nome_ticker,dati_storici,gap_perc_A,gap_perc_B,volume,prezzo_A,prezzo_B):
     
 
     # print(nome_ticker.upper(),'\n')
@@ -286,71 +356,71 @@ def ricerca_gaps(nome_ticker,dati_storici,trans,gap_perc_A,gap_perc_B,volume,pre
     
     # rettifico al valore originale i dati di ogni riga del df gaps:
     
-    if gaps.shape[0]>0:
+    # if gaps.shape[0]>0:
         
-        # gaps['Open'] = gaps.apply(lambda x: x['Open']*trans.loc[x.name,'split_factor'],axis=1)
-        # gaps['High'] = gaps.apply(lambda x: x['High']*trans.loc[x.name,'split_factor'],axis=1)
-        # gaps['Low'] = gaps.apply(lambda x: x['Low']*trans.loc[x.name,'split_factor'],axis=1)
-        # gaps['Close'] = gaps.apply(lambda x: x['Close']*trans.loc[x.name,'split_factor'],axis=1)
-        # gaps['Volume'] = gaps.apply(lambda x: x['Volume']/trans.loc[x.name,'split_factor'],axis=1)
+    #     # gaps['Open'] = gaps.apply(lambda x: x['Open']*trans.loc[x.name,'split_factor'],axis=1)
+    #     # gaps['High'] = gaps.apply(lambda x: x['High']*trans.loc[x.name,'split_factor'],axis=1)
+    #     # gaps['Low'] = gaps.apply(lambda x: x['Low']*trans.loc[x.name,'split_factor'],axis=1)
+    #     # gaps['Close'] = gaps.apply(lambda x: x['Close']*trans.loc[x.name,'split_factor'],axis=1)
+    #     # gaps['Volume'] = gaps.apply(lambda x: x['Volume']/trans.loc[x.name,'split_factor'],axis=1)
         
-        gaps['Open'] = gaps.apply(lambda x: x['Open']*trans.loc[x.name,'split_factor'] if\
-                                  (trans.loc[x.name,'split_factor']< 1) else \
-                                      (x['Open']/trans.loc[x.name,'split_factor']),axis=1)
+    #     gaps['Open'] = gaps.apply(lambda x: x['Open']*trans.loc[x.name,'split_factor'] if\
+    #                               (trans.loc[x.name,'split_factor']< 1) else \
+    #                                   (x['Open']/trans.loc[x.name,'split_factor']),axis=1)
             
-        gaps['High'] = gaps.apply(lambda x: x['High']*trans.loc[x.name,'split_factor'] if\
-                                  (trans.loc[x.name,'split_factor']< 1) else \
-                                      (x['High']/trans.loc[x.name,'split_factor']),axis=1)
+    #     gaps['High'] = gaps.apply(lambda x: x['High']*trans.loc[x.name,'split_factor'] if\
+    #                               (trans.loc[x.name,'split_factor']< 1) else \
+    #                                   (x['High']/trans.loc[x.name,'split_factor']),axis=1)
             
-        gaps['Low'] = gaps.apply(lambda x: x['Low']*trans.loc[x.name,'split_factor'] if\
-                                  (trans.loc[x.name,'split_factor']< 1) else \
-                                      (x['Low']/trans.loc[x.name,'split_factor']),axis=1)
+    #     gaps['Low'] = gaps.apply(lambda x: x['Low']*trans.loc[x.name,'split_factor'] if\
+    #                               (trans.loc[x.name,'split_factor']< 1) else \
+    #                                   (x['Low']/trans.loc[x.name,'split_factor']),axis=1)
             
-        gaps['Close'] = gaps.apply(lambda x: x['Close']*trans.loc[x.name,'split_factor'] if\
-                                  (trans.loc[x.name,'split_factor']< 1) else \
-                                      (x['Close']/trans.loc[x.name,'split_factor']),axis=1) 
+    #     gaps['Close'] = gaps.apply(lambda x: x['Close']*trans.loc[x.name,'split_factor'] if\
+    #                               (trans.loc[x.name,'split_factor']< 1) else \
+    #                                   (x['Close']/trans.loc[x.name,'split_factor']),axis=1) 
             
             
-        gaps['Volume'] = gaps.apply(lambda x: x['Volume']/trans.loc[x.name,'split_factor'] if\
-                                  (trans.loc[x.name,'split_factor']< 1) else \
-                                      (x['Volume']*trans.loc[x.name,'split_factor']),axis=1)     
-            
-        
-            
+    #     gaps['Volume'] = gaps.apply(lambda x: x['Volume']/trans.loc[x.name,'split_factor'] if\
+    #                               (trans.loc[x.name,'split_factor']< 1) else \
+    #                                   (x['Volume']*trans.loc[x.name,'split_factor']),axis=1)     
             
         
+            
+            
         
         
         
-        gaps = gaps[(gaps['Gap %']>=gap_perc_A)&\
+        
+    gaps = gaps[(gaps['Gap %']>=gap_perc_A)&\
                         (gaps['Gap %']<=gap_perc_B)&\
                         (gaps['Volume']>=volume)&(gaps['Open']>=prezzo_A)&(gaps['Open']<=prezzo_B)]
     
     
-        
+    if not gaps.empty:    
         # Effettuo adesso una copia del df gaps - solamente per poterla visualizzare
     
         display_gaps = gaps.copy()
-        
-        
+            
+            
         display_gaps['Volume'] = display_gaps.apply(lambda x: f"{x['Volume']:,.0f}".replace(',','.'),axis=1)
-        
+            
         display_gaps = display_gaps.round(2)
-        
-        
+            
+            
         display_gaps[['Gap %', 'Open', 'High', 'Low', 'Close', 'Max % UP',
-           'Max % DOWN', 'Open to Close %']]=\
+               'Max % DOWN', 'Open to Close %']]=\
         display_gaps[['Gap %', 'Open', 'High', 'Low', 'Close', 'Max % UP',
-           'Max % DOWN', 'Open to Close %']].astype(str).apply(lambda x: x.str.replace('.',',',regex=False))
-        
-        
-        
+               'Max % DOWN', 'Open to Close %']].astype(str).apply(lambda x: x.str.replace('.',',',regex=False))
+            
+            
+            
         display_gaps.reset_index(drop=True,inplace=True)
         display_gaps.index = display_gaps.index+1
-    
-        #st.dataframe(display_gaps, use_container_width=True)
-        #st.dataframe(display_gaps)
-        #AgGrid(display_gaps, height=300, fit_columns_on_grid_load=True)
+        
+            #st.dataframe(display_gaps, use_container_width=True)
+            #st.dataframe(display_gaps)
+            #AgGrid(display_gaps, height=300, fit_columns_on_grid_load=True)
        
         
         
@@ -360,8 +430,8 @@ def ricerca_gaps(nome_ticker,dati_storici,trans,gap_perc_A,gap_perc_B,volume,pre
         
         
     else: 
-        print(f' il titolo {nome_ticker.value} non ha nessun gap superiore o uguale al {gap_perc_A}%')
-        
+        print(f' il titolo {nome_ticker} non ha nessun gap superiore o uguale al {gap_perc_A}%')
+        return gaps
         
         
 #%%
@@ -598,7 +668,7 @@ with col1:
       
     
     with st.form(key=f'GAPs_Finder'):
-         nome_ticker = st.text_input('**GAPs Finder v1.01**',placeholder='Enter the Ticker').strip()
+         nome_ticker = st.text_input('**GAPs Finder v1.02P**',placeholder='Enter the Ticker').strip()
          bottone_ricerca = st.form_submit_button('ricerca GAPs')
          
     
@@ -628,13 +698,13 @@ with col1:
             
             if not dati_yfinance.empty:
              
-                trans,dati_storici_ADJ = elaborazione(dati_yfinance)
+                dati_storici_ADJ,dati_storici_DEF = elaborazione(dati_yfinance)
                 dati_split = stock_split(dati_yfinance)
                 fondamentali_finvitz = finvitz_func(nome_ticker)
                 
 
-                st.session_state['dati_storici'] = dati_yfinance
-                st.session_state['trans'] = trans
+                st.session_state['dati_storici'] = dati_storici_DEF #dati_yfinance
+                #st.session_state['trans'] = trans
                 st.session_state['fondamentali_finvitz'] = fondamentali_finvitz
                 st.session_state['dati_split'] = dati_split
                 st.session_state['dati_storici_ADJ'] = dati_storici_ADJ
@@ -650,7 +720,7 @@ with col1:
             
             
             
-    if 'dati_storici' in st.session_state and st.session_state['dati_storici'] is not None:
+    if 'dati_storici' in st.session_state and st.session_state['dati_storici'] is not None: #and 'dati_split' in st.session_state:
         
         
         with stampa_col1.container():
@@ -764,7 +834,7 @@ with col2:
                
               
            v_gaps = ricerca_gaps(nome_ticker,st.session_state['dati_storici'],\
-                                     st.session_state['trans'],gap_A,gap_B,volume*1_000_000,prezzo_A,prezzo_B) 
+                                 gap_A,gap_B,volume*1_000_000,prezzo_A,prezzo_B) 
 
 
            
@@ -812,6 +882,8 @@ with col2:
 
         
         
+
+
 
 
 
