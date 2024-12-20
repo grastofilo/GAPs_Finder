@@ -269,10 +269,7 @@ def yfinance_func(nome_ticker):
     # Usa la sessione per fare la richiesta a yfinance
     yf._REQUESTS_SESSION = session  # Assegna la sessione personalizzata
 
-    # Ora puoi fare le chiamate a yfinance
-    # data = yf.download("AAPL", period="1d", interval="1m")
-  
-  
+    
     ticker = yf.Ticker(nome_ticker.upper())
     dati_storici =  ticker.history(period="max")  # dati periodo massimo disponibile  
     print(len(dati_storici))
@@ -281,19 +278,6 @@ def yfinance_func(nome_ticker):
     #      pickle.dump(dati_storici, file)
     
     
-    
-    # length = 0; length_list=[]
-    # for attempts in range(1,6):
-    #     dati_provvisori = ticker.history(period="max")  # dati periodo massimo disponibile
-        
-    #     if len(dati_provvisori)> length:
-    #         length = len(dati_provvisori)
-    #         dati_storici = dati_provvisori
-            
-    #     length_list.append(length)
-        
-    #     print(length_list)
-    # print(dati_storici['Stock Splits'].sum())
    
     
     
@@ -692,7 +676,7 @@ with col1:
         
         if nome_ticker:
             
-            
+            st.cache_data.clear()
             dati_yfinance = yfinance_func(nome_ticker)
             
             
