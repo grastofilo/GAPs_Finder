@@ -260,18 +260,18 @@ def yfinance_func(nome_ticker):
     
     dati_storici = None
     
-    #proxies = {'http': 'http://220.248.70.237:9002'}
+    proxies = {'http': 'http://220.248.70.237:9002'}
 
     # Creazione di una sessione custom con il proxy
-    #session = requests.Session()
-    #session.proxies = proxies
+    session = requests.Session()
+    session.proxies = proxies
 
     # Usa la sessione per fare la richiesta a yfinance
-    #yf._REQUESTS_SESSION = session  # Assegna la sessione personalizzata
+    yf._REQUESTS_SESSION = session  # Assegna la sessione personalizzata
 
     
     ticker = yf.Ticker(nome_ticker.upper())
-    dati_storici =  ticker.history(period="max",proxy={'http': 'http://220.248.70.237:9002'})  # dati periodo massimo disponibile  
+    dati_storici =  ticker.history(period="max")  # dati periodo massimo disponibile  
     print(len(dati_storici))
     
     # with open(f"/Users/ninni/desktop/{nome_ticker}.pkl", "wb") as file:
