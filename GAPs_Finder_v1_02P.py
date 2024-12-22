@@ -271,7 +271,7 @@ def yfinance_func(nome_ticker):
 
     
     ticker = yf.Ticker(nome_ticker.upper())
-    dati_storici =  ticker.history(period="max",auto_adjust=True)  # dati periodo massimo disponibile  
+    dati_storici =  ticker.history(period="max",auto_adjust=False)  # dati periodo massimo disponibile  
     print(len(dati_storici))
     
     # with open(f"/Users/ninni/desktop/{nome_ticker}.pkl", "wb") as file:
